@@ -7,11 +7,11 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      # v3를 v4로 변경 (최신 버전 부품)
+      # 낡은 도구 v3를 최신형 v4로 교체
       - uses: actions/checkout@v4 
       
-      # v4를 v5로 변경 (최신 버전 부품)
       - name: Set up Python
+        # 낡은 도구 v4를 최신형 v5로 교체
         uses: actions/setup-python@v5 
         with:
           python-version: '3.9'
