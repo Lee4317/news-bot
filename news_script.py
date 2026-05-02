@@ -24,10 +24,28 @@ def get_seoul_news():
 def send_mail(body):
     user = os.environ.get('NAVER_USER_ID')
     pw = os.environ.get('NAVER_USER_PW')
-    msg = MIMEMultipart(); msg['Subject'] = "아침 뉴스 배달"; msg['From'] = user; msg['To'] = user
+    
+    # 환경 변수가 비어있는지 확인
+    if not user or not pw:
+        print("에러: NAVER_USER_ID 또는 NAVER_USER_PW가 설정되지 않았습니다.")
+        return
+
+    msg = MIMEMultipart()
+    msg['Subject'] = "⏰ 아침 7시 서울신문 뉴스 브리핑"
+    msg['From'] = user
+    msg['To'] = user
     msg.attach(MIMEText(body, 'html'))
-    with smtplib.SMTP_SSL("smtp.naver.com", 465) as s:
-        s.login(user, pw); s.sendmail(user, user, msg.as_string())
+
+    try:
+        # SMTP_SSL을 사용하여 네이버 서버에 연결
+        with smtplib.SMTP_SSL("smtp.naver.com", 465) as s:
+            # TypeError 방지를 위해 직접 인증 시도
+            s.ehlo()
+            s.login(user, pw)
+            s.sendmail(user, user, msg.as_string())
+            print("메일 발송 성공!")
+    except Exception as e:
+        print(f"메일 발송 중 에러 발생: {e}")
 
 if __name__ == "__main__":
     send_mail(get_seoul_news())
