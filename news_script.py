@@ -26,38 +26,38 @@ def get_seoul_news():
         return f"서울신문 추출 실패: {e}<br>"
 
 def get_bbc_news():
-    # 가장 안정적인 RSS 피드 방식 사용 (World 뉴스)
     url = "https://feeds.bbci.co.uk/news/world/rss.xml"
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
         res = requests.get(url, headers=headers)
-        # RSS는 XML 형식이므로 lxml이나 html.parser로 분석 가능
+        # 'lxml' 파서를 명시적으로 사용합니다.
         soup = BeautifulSoup(res.content, 'xml')
         items = soup.find_all('item', limit=3)
         
         content = "<h2 style='color: #b71c1c;'>🌍 BBC World News (Top 3)</h2><br>"
         if not items:
-            content += "현재 업데이트된 BBC 뉴스가 없습니다.<br>"
+            return content + "BBC 뉴스를 찾을 수 없습니다. (데이터 없음)<br>"
             
         for item in items:
-            title = item.title.text.strip()
-            link = item.link.text.strip()
-            desc = item.description.text.strip()
+            title = item.title.text.strip() if item.title else "No Title"
+            link = item.link.text.strip() if item.link else "#"
+            desc = item.description.text.strip() if item.description else "No description"
             content += f"<b>{title}</b><br>{desc}<br><a href='{link}'>Read More</a><br><br><hr>"
         return content
     except Exception as e:
-        return f"BBC 뉴스 추출 실패: {e}<br>"
+        # 에러가 나면 메일 내용에 에러 메시지를 포함시킵니다.
+        return f"<h2 style='color: red;'>❌ BBC 추출 실패</h2> 원인: {e}<br>"
 
 def send_mail(body):
     user = os.environ.get('NAVER_USER_ID', '').strip()
     pw = os.environ.get('NAVER_USER_PW', '').strip()
     
     if not user or not pw:
-        print("❌ 설정 오류: ID/PW가 비어있습니다.")
+        print("❌ ID/PW 누락")
         return
 
     msg = MIMEMultipart()
-    msg['Subject'] = "⏰ 서울신문 & BBC 뉴스 브리핑"
+    msg['Subject'] = "⏰ 글로벌 뉴스 (서울신문 & BBC)"
     msg['From'] = user
     msg['To'] = user
     msg.attach(MIMEText(body, 'html'))
@@ -66,10 +66,11 @@ def send_mail(body):
         with smtplib.SMTP_SSL("smtp.naver.com", 465) as s:
             s.login(user, pw)
             s.sendmail(user, user, msg.as_string())
-            print("✅ 메일 발송 성공!")
+            print("✅ 발송 완료")
     except Exception as e:
-        print(f"❌ 발송 실패: {e}")
+        print(f"❌ 발송 에러: {e}")
 
 if __name__ == "__main__":
+    # 두 뉴스를 합쳐서 보냅니다.
     combined_content = get_seoul_news() + "<br><br>" + get_bbc_news()
     send_mail(combined_content)
