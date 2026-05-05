@@ -5,9 +5,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-import yfinance as yf
-import datetime
-# ... 기존에 있던 다른 import들 ...
 
 def get_seoul_news():
     url = "https://media.naver.com/press/081"
@@ -51,40 +48,6 @@ def get_bbc_news():
     except Exception as e:
         # 에러가 나면 메일 내용에 에러 메시지를 포함시킵니다.
         return f"<h2 style='color: red;'>❌ BBC 추출 실패</h2> 원인: {e}<br>"
-
-def get_investment_advice(total_budget=550):
-    try:
-        ticker = yf.Ticker("TQQQ")
-        df = ticker.history(period="30d")
-        if df.empty: return "주식 데이터를 가져오지 못했습니다."
-        
-        # RSI 계산
-        delta = df['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rsi = (100 - (100 / (1 + (gain / loss)))).iloc[-1]
-        
-        action = "✅ 정상 매수" if rsi < 50 else "🚨 매수 쉬어감(관망)"
-        amount = round(total_budget * 0.05, 2) if rsi < 50 else 0
-        
-        report = f"""
---------------------------------------------------
-[오늘의 $550 투자 지침]
-- 오늘의 행동: {action}
-- 권장 매수액: ${amount}
-- 현재 RSI: {round(rsi, 2)}
-- 현재 TQQQ 가격: ${round(df['Close'].iloc[-1], 2)}
---------------------------------------------------
-"""
-        return report
-    except Exception as e:
-        return f"\n[투자 지침 오류]: {str(e)}\n"
-# 뉴스 봇의 메일 본문 생성 로직 어딘가에 추가
-news_content = "기존 뉴스 봇이 수집한 뉴스 내용들..."
-investment_report = get_investment_advice()
-
-# 최종 메일 본문
-final_body = news_content + "\n" + investment_report
 
 
 
